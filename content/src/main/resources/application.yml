@@ -1,0 +1,121 @@
+server:
+  servlet:
+    context-path: /content
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+info:
+  app-name: content
+  autor: machao
+#  app:
+#    encoding: @project.build.sourceEncoding@
+#    java:
+#      source: @java.version@
+#      target: @java.version@
+spring:
+  application:
+    name: content
+  datasource:
+    druid:
+#      driver-class-name: oracle.jdbc.driver.OracleDriver
+#      url: jdbc:oracle:thin:@10.37.129.3:1521:orcl
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/test?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+      username: root
+      password: root1234
+      connect-properties: config.decrypt=false
+      initial-size: 1
+      max-active: 20
+      min-idle: 1
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      remove-abandoned: true
+      remove-abandoned-timeout: 180
+      test-on-borrow: true
+      test-on-return: true
+      test-while-idle: true
+      time-between-log-stats-millis: 300000
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      validation-query: select 1 from dual
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: '*.js, *.gif, *.jpg, *.jpeg, *.png, *.css, *.ico, /druid/*'
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: true
+        login-username: admin
+        login-password: 123456
+      keep-alive: true
+      log-abandoned: true
+#  task:
+#    execution:
+#      pool:
+#        max-size: 50
+#        core-size: 8
+#        keep-alive: 60
+#        queue-capacity: 10000
+#      thread-name-prefix: task-
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        cluster-name: gaoxin
+    # 指定sentinel流量监控控制台地址
+    sentinel:
+      # 关闭对Spring MVC端点的保护
+#      filter:
+#        enabled: false
+      transport:
+        dashboard: localhost:8080
+#使用配置文件的方式配置负载类
+#设置调用user项目的负载方式为RandomRule随机
+user:
+  ribbon:
+    NFLoadBalancerRuleClassName: com.alibaba.cloud.nacos.ribbon.NacosRule
+#    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
+#ribbon默认为懒加载，第一次请求的时候才会加载，所以首次请求较慢，修改为启动即加载
+ribbon:
+  eager-load:
+    clients: user,content
+logging:
+  level:
+    com.grgbanking: debug
+#    com.grgbanking.alicloud.content.configuration.UserFeignClientConfiguration: debug
+# 细粒度配置feign的日志级别
+#feign:
+#  client:
+#    config:
+#      user:
+#        loggerLevel: full
+# 全局配置feign的日志级别
+feign:
+  client:
+    config:
+      default:
+        #日志级别 NONE(默认)、BASIC、HEADERS、FULL
+        loggerLevel: basic
+  httpclient:
+    #配置feign使用httpclient做请求，而不是用默认的urlConnection
+    enabled: true
+    #feign的最大连接数
+    max-connections: 200
+    #feign的单个路径最大连接数
+    max-connections-per-route: 50
+  sentinel:
+    enabled: true
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: content-group
