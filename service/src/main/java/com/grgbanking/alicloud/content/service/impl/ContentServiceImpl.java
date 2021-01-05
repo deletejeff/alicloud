@@ -111,7 +111,7 @@ public class ContentServiceImpl implements ContentService {
     public boolean addContentByMqTransaction(ContentEntity contentEntity){
         try {
             String transactionId = UUID.randomUUID().toString();
-            this.addContentWithTransactionLog(contentEntity,transactionId);
+            logger.info("生成的 transactionId = {}", transactionId);
             UserAddPointsMqMsg userAddPointsMqMsg = new UserAddPointsMqMsg();
             userAddPointsMqMsg.setUserid(contentEntity.getUserid());
             userAddPointsMqMsg.setPoints(50);
@@ -143,16 +143,12 @@ public class ContentServiceImpl implements ContentService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addContentWithTransactionLog(ContentEntity contentEntity,String transactionId){
-        try {
-            int insertContent = contentDao.insert(contentEntity);
-            RocketTransactionLog rocketTransactionLog = new RocketTransactionLog();
-            rocketTransactionLog.setId(transactionId);
-            rocketTransactionLog.setTransactionId(transactionId);
-            rocketTransactionLog.setStatus(insertContent);
-            rocketTransactionLog.setLog(insertContent>0 ? "success" : "failure");
-            rocketTransactionLogDao.insert(rocketTransactionLog);
-        } catch (Exception e) {
-            logger.error("添加内容数据,并添加事务日志异常", e);
-        }
+        int insertContent = contentDao.insert(contentEntity);
+        RocketTransactionLog rocketTransactionLog = new RocketTransactionLog();
+        rocketTransactionLog.setId(transactionId);
+        rocketTransactionLog.setTransactionId(transactionId);
+        rocketTransactionLog.setStatus(insertContent);
+        rocketTransactionLog.setLog(insertContent>0 ? "success" : "failure");
+        rocketTransactionLogDao.insert(rocketTransactionLog);
     }
 }
