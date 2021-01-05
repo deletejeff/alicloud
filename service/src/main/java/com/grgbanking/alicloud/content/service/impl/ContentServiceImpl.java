@@ -3,10 +3,12 @@ package com.grgbanking.alicloud.content.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.grgbanking.alicloud.common.entity.content.ContentEntity;
 import com.grgbanking.alicloud.common.entity.user.UserEntity;
-import com.grgbanking.alicloud.common.po.content.ContentPo;
 import com.grgbanking.alicloud.common.mq.UserAddPointsMqMsg;
-import com.grgbanking.alicloud.dao.content.ContentDao;
+import com.grgbanking.alicloud.common.mq.entity.RocketTransactionLog;
+import com.grgbanking.alicloud.common.po.content.ContentPo;
 import com.grgbanking.alicloud.content.service.ContentService;
+import com.grgbanking.alicloud.dao.content.ContentDao;
+import com.grgbanking.alicloud.dao.mq.RocketTransactionLogDao;
 import com.grgbanking.alicloud.userclient.feignclient.UserFeignClient;
 import org.apache.rocketmq.client.producer.LocalTransactionState;
 import org.apache.rocketmq.client.producer.TransactionSendResult;
@@ -32,11 +34,11 @@ public class ContentServiceImpl implements ContentService {
     @Autowired
     private ContentDao contentDao;
     @Autowired
-    private ContentService contentService;
-    @Autowired
     private UserFeignClient userFeignClient;
     @Autowired
     private RocketMQTemplate rocketMQTemplate;
+    @Autowired
+    private RocketTransactionLogDao rocketTransactionLogDao;
 
 //    @Autowired
 //    private RestTemplate restTemplate;
@@ -106,11 +108,10 @@ public class ContentServiceImpl implements ContentService {
      * @return
      */
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean addContentByMqTransaction(ContentEntity contentEntity) throws Exception {
+    public boolean addContentByMqTransaction(ContentEntity contentEntity){
         try {
-            int res = contentDao.insert(contentEntity);
             String transactionId = UUID.randomUUID().toString();
+            this.addContentWithTransactionLog(contentEntity,transactionId);
             UserAddPointsMqMsg userAddPointsMqMsg = new UserAddPointsMqMsg();
             userAddPointsMqMsg.setUserid(contentEntity.getUserid());
             userAddPointsMqMsg.setPoints(50);
@@ -127,13 +128,31 @@ public class ContentServiceImpl implements ContentService {
                             .build(),
                     contentEntity
             );
-            if(LocalTransactionState.ROLLBACK_MESSAGE.equals(transactionSendResult.getLocalTransactionState())){
-                throw new Exception("发送半消息回滚！");
-            }
-            return res > 0;
+            return true;
         } catch (MessagingException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     * 添加内容数据,并添加事务日志
+     * @param contentEntity
+     * @param transactionId
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addContentWithTransactionLog(ContentEntity contentEntity,String transactionId){
+        try {
+            int insertContent = contentDao.insert(contentEntity);
+            RocketTransactionLog rocketTransactionLog = new RocketTransactionLog();
+            rocketTransactionLog.setId(transactionId);
+            rocketTransactionLog.setTransactionId(transactionId);
+            rocketTransactionLog.setStatus(insertContent);
+            rocketTransactionLog.setLog(insertContent>0 ? "success" : "failure");
+            rocketTransactionLogDao.insert(rocketTransactionLog);
+        } catch (Exception e) {
+            logger.error("添加内容数据,并添加事务日志异常", e);
         }
     }
 }

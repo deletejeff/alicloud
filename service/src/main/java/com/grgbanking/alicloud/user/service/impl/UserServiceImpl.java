@@ -78,13 +78,6 @@ public class UserServiceImpl implements UserService {
     public boolean addUserPointsByTransaction(UserAddPointsMqMsg userAddPointsMqMsg){
         try {
             int res = userDao.addUserPoints(userAddPointsMqMsg.getUserid(), userAddPointsMqMsg.getPoints());
-            RocketTransactionLog rocketTransactionLog = new RocketTransactionLog();
-            String transactionId = UUID.randomUUID().toString();
-            rocketTransactionLog.setId(transactionId);
-            rocketTransactionLog.setTransactionId(transactionId);
-            rocketTransactionLog.setStatus(res);
-            rocketTransactionLog.setLog(res>0 ? "success" : "failure");
-            rocketTransactionLogDao.insert(rocketTransactionLog);
             //添加积分明细
             UserPointsEventLogEntity userPointsEventLogEntity = new UserPointsEventLogEntity();
             userPointsEventLogEntity.setId(UUID.randomUUID().toString().replace("-", ""));

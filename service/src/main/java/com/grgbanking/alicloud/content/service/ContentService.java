@@ -33,7 +33,15 @@ public interface ContentService {
      * 添加内容数据,通过rocketMq添加积分,增加事务
      * @param contentEntity
      * @return
-     * @throws Exception
      */
-    public boolean addContentByMqTransaction(ContentEntity contentEntity) throws Exception;
+    public boolean addContentByMqTransaction(ContentEntity contentEntity);
+
+    /**
+     * 添加内容数据,并添加事务日志
+     *
+     * @param contentEntity
+     * @param transactionId
+     * @return
+     */
+    public void addContentWithTransactionLog(ContentEntity contentEntity, String transactionId);
 }

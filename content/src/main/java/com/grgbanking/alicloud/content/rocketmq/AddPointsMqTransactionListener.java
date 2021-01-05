@@ -36,6 +36,7 @@ public class AddPointsMqTransactionListener implements RocketMQLocalTransactionL
             contentEntity.setRemark("积分发送到用户微服务，等待处理");
             res = contentDao.updateById(contentEntity) > 0;
             commit = getRocketTransactionState(msg);
+            updatePointsResult(msg, commit);
         } catch (Exception e) {
             commit = RocketMQLocalTransactionState.ROLLBACK;
             logger.error("用户积分入库事务失败，回滚！",e);
@@ -52,6 +53,11 @@ public class AddPointsMqTransactionListener implements RocketMQLocalTransactionL
             logger.error("用户积分入库事务失败，回滚！",e);
             commit = RocketMQLocalTransactionState.ROLLBACK;
         }
+        updatePointsResult(msg, commit);
+        return commit;
+    }
+
+    private void updatePointsResult(Message msg, RocketMQLocalTransactionState commit) {
         try {
             String contentId = msg.getHeaders().get("contentId", String.class);
             ContentEntity contentEntity = contentDao.selectById(contentId);
@@ -67,7 +73,6 @@ public class AddPointsMqTransactionListener implements RocketMQLocalTransactionL
         } catch (Exception e) {
             logger.error("remark更新失败", e);
         }
-        return commit;
     }
 
     private RocketMQLocalTransactionState getRocketTransactionState(Message msg){
