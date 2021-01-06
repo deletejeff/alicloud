@@ -1,14 +1,19 @@
 package com.grgbanking.alicloud.content.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.grgbanking.alicloud.common.entity.content.ContentEntity;
 import com.grgbanking.alicloud.common.entity.user.UserEntity;
+import com.grgbanking.alicloud.common.mq.UserAddPointsMqMsg;
 import com.grgbanking.alicloud.common.po.content.ContentPo;
 import com.grgbanking.alicloud.content.service.ContentService;
+import org.apache.rocketmq.spring.support.RocketMQHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -26,6 +31,8 @@ public class ContentController {
     private ContentService contentService;
     @Autowired
     private DiscoveryClient discoveryClient;
+    @Autowired
+    private Source source;
 
     public static final Logger logger = LoggerFactory.getLogger(ContentController.class);
 
@@ -132,6 +139,49 @@ public class ContentController {
             contentEntity.setContentId(UUID.randomUUID().toString().replace("-", ""));
             BeanUtils.copyProperties(contentPo, contentEntity);
             boolean res = contentService.addContentByMqTransaction(contentEntity);
+            if(res){
+                map.put("errorCode", 0);
+                map.put("errorMsg", "success");
+            }else{
+                map.put("errorCode", -1);
+                map.put("errorMsg", "failure");
+            }
+        } catch (Exception e) {
+            map.put("errorCode", -1);
+            map.put("errorMsg", "failure");
+            logger.error("content data insert failure!", e);
+        }
+        return map;
+    }
+
+    /**
+     * 添加内容数据,通过rocketMq添加积分,使用cloud stream
+     * @param contentPo
+     * @return
+     */
+    @PostMapping("/addContentByCloudStream")
+    public Map<String,Object> addContentByCloudStream(@RequestBody ContentPo contentPo){
+        Map<String, Object> map = new HashMap<>(2);
+        try {
+            ContentEntity contentEntity = new ContentEntity();
+            contentEntity.setContentId(UUID.randomUUID().toString().replace("-", ""));
+            BeanUtils.copyProperties(contentPo, contentEntity);
+            String transactionId = UUID.randomUUID().toString();
+            logger.info("生成的 transactionId = {}", transactionId);
+            UserAddPointsMqMsg userAddPointsMqMsg = new UserAddPointsMqMsg();
+            userAddPointsMqMsg.setUserid(contentEntity.getUserid());
+            userAddPointsMqMsg.setPoints(50);
+            userAddPointsMqMsg.setDescription("通过mqCloudStream消息，评论获取积分");
+            userAddPointsMqMsg.setEvent("ADD");
+            source.output().send(MessageBuilder
+                    .withPayload(userAddPointsMqMsg)
+                    .setHeader(RocketMQHeaders.TRANSACTION_ID, transactionId)
+                    .setHeader("contentId", contentEntity.getContentId())
+                    .setHeader("dto", JSON.toJSONString(userAddPointsMqMsg))
+                    .setHeader("contentEntity", JSON.toJSONString(contentEntity))
+                    .setHeader("filterHeader","just do it")
+                    .build());
+            boolean res = true;
             if(res){
                 map.put("errorCode", 0);
                 map.put("errorMsg", "success");

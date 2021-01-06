@@ -76,7 +76,6 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addUserPointsByTransaction(UserAddPointsMqMsg userAddPointsMqMsg){
-        try {
             int res = userDao.addUserPoints(userAddPointsMqMsg.getUserid(), userAddPointsMqMsg.getPoints());
             //添加积分明细
             UserPointsEventLogEntity userPointsEventLogEntity = new UserPointsEventLogEntity();
@@ -88,9 +87,6 @@ public class UserServiceImpl implements UserService {
             userPointsEventLogEntity.setDescription(userAddPointsMqMsg.getDescription());
             userPointsEventLogDao.insert(userPointsEventLogEntity);
             return res > 0;
-        } catch (Exception e) {
-            logger.error("添加积分失败", e);
-            return false;
-        }
     }
+
 }

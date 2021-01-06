@@ -10,7 +10,6 @@ import com.grgbanking.alicloud.content.service.ContentService;
 import com.grgbanking.alicloud.dao.content.ContentDao;
 import com.grgbanking.alicloud.dao.mq.RocketTransactionLogDao;
 import com.grgbanking.alicloud.userclient.feignclient.UserFeignClient;
-import org.apache.rocketmq.client.producer.LocalTransactionState;
 import org.apache.rocketmq.client.producer.TransactionSendResult;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.apache.rocketmq.spring.support.RocketMQHeaders;
@@ -95,7 +94,7 @@ public class ContentServiceImpl implements ContentService {
         UserAddPointsMqMsg userAddPointsMqMsg = new UserAddPointsMqMsg();
         userAddPointsMqMsg.setUserid(contentEntity.getUserid());
         userAddPointsMqMsg.setPoints(50);
-        userAddPointsMqMsg.setDescription("评论获取积分");
+        userAddPointsMqMsg.setDescription("通过mq消息，评论获取积分");
         userAddPointsMqMsg.setEvent("ADD");
         rocketMQTemplate.convertAndSend("add-points", userAddPointsMqMsg);
         return res > 0;
@@ -115,10 +114,11 @@ public class ContentServiceImpl implements ContentService {
             UserAddPointsMqMsg userAddPointsMqMsg = new UserAddPointsMqMsg();
             userAddPointsMqMsg.setUserid(contentEntity.getUserid());
             userAddPointsMqMsg.setPoints(50);
-            userAddPointsMqMsg.setDescription("评论获取积分");
+            userAddPointsMqMsg.setDescription("通过mqTransaction消息，评论获取积分");
             userAddPointsMqMsg.setEvent("ADD");
             //发送半消息(半消息：在事务中发送但消费者不使用的消息，等事务状态确定再使用或放弃的消息)
             TransactionSendResult transactionSendResult = rocketMQTemplate.sendMessageInTransaction(
+                    "tx-add-points-group",
                     "add-points-transaction",
                     MessageBuilder
                             .withPayload(userAddPointsMqMsg)

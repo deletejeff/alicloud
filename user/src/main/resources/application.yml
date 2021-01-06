@@ -77,6 +77,17 @@ spring:
 #        enabled: false
       transport:
         dashboard: localhost:8080
+    stream:
+      rocketmq:
+        binder:
+          name-server: localhost:9876
+      bindings:
+        input:
+          destination: add-points-stream-trans
+          group: add-points-stream-trans-group
+#        input:
+#          destination: add-points-stream
+#          group: add-points-stream-group
 feign:
   client:
     config:
@@ -98,6 +109,7 @@ mybatis-plus:
 logging:
   level:
     com.baomidou.mybatisplus.samples.quickstart: debug
+# 不使用stream的时候需要的配置
 rocketmq:
   name-server: localhost:9876
   producer:

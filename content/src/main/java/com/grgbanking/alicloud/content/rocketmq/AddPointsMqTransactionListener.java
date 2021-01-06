@@ -1,5 +1,6 @@
 package com.grgbanking.alicloud.content.rocketmq;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grgbanking.alicloud.common.entity.content.ContentEntity;
 import com.grgbanking.alicloud.common.mq.entity.RocketTransactionLog;
@@ -20,7 +21,7 @@ import org.springframework.messaging.Message;
  *
  * @author machao
  */
-@RocketMQTransactionListener
+@RocketMQTransactionListener(txProducerGroup = "tx-add-points-group")
 public class AddPointsMqTransactionListener implements RocketMQLocalTransactionListener {
     public static final Logger logger = LoggerFactory.getLogger(AddPointsMqTransactionListener.class);
     @Autowired
@@ -34,7 +35,7 @@ public class AddPointsMqTransactionListener implements RocketMQLocalTransactionL
     public RocketMQLocalTransactionState executeLocalTransaction(Message msg, Object arg) {
         RocketMQLocalTransactionState state = null;
         try {
-            ContentEntity contentEntity = (ContentEntity) arg;
+            ContentEntity contentEntity = JSONObject.parseObject((String) msg.getHeaders().get("contentEntity"),ContentEntity.class);
             String transactionId = msg.getHeaders().get(RocketMQHeaders.TRANSACTION_ID, String.class);
             contentService.addContentWithTransactionLog(contentEntity,transactionId);
             state = RocketMQLocalTransactionState.COMMIT;

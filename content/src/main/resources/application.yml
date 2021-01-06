@@ -79,6 +79,19 @@ spring:
 #        enabled: false
       transport:
         dashboard: localhost:8080
+    stream:
+      rocketmq:
+        binder:
+          name-server: localhost:9876
+        bindings:
+          output:
+            producer:
+              transactional: true
+              group: tx-add-points-group
+      bindings:
+        output:
+          # 用来指定topic
+          destination: add-points-stream-trans
 #使用配置文件的方式配置负载类
 #设置调用user项目的负载方式为RandomRule随机
 user:
@@ -115,7 +128,11 @@ feign:
     max-connections-per-route: 50
   sentinel:
     enabled: true
+# 不使用stream的时候需要的配置
 rocketmq:
   name-server: localhost:9876
   producer:
     group: content-group
+# mybatisplus 配置
+mybatis-plus:
+  mapper-locations: classpath*:/mybatis/oracle/daoMapper/*DaoMapper.xml
