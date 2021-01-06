@@ -32,29 +32,39 @@ public class AddPointsMqTransactionListener implements RocketMQLocalTransactionL
 
     @Override
     public RocketMQLocalTransactionState executeLocalTransaction(Message msg, Object arg) {
+        RocketMQLocalTransactionState rocketMQLocalTransactionState = null;
         try {
             ContentEntity contentEntity = (ContentEntity) arg;
             String transactionId = msg.getHeaders().get(RocketMQHeaders.TRANSACTION_ID, String.class);
             contentService.addContentWithTransactionLog(contentEntity,transactionId);
-            return RocketMQLocalTransactionState.ROLLBACK;
+            rocketMQLocalTransactionState = RocketMQLocalTransactionState.COMMIT;
         } catch (Exception e) {
             logger.error("添加内容数据,并添加事务日志异常", e);
-            return RocketMQLocalTransactionState.ROLLBACK;
+            rocketMQLocalTransactionState = RocketMQLocalTransactionState.ROLLBACK;
         }
+        logger.info("execute 方法状态返回 : {}", rocketMQLocalTransactionState);
+        return rocketMQLocalTransactionState;
     }
 
     @Override
     public RocketMQLocalTransactionState checkLocalTransaction(Message msg) {
+        RocketMQLocalTransactionState rocketMQLocalTransactionState = null;
         try {
             String transactionId = msg.getHeaders().get(RocketMQHeaders.TRANSACTION_ID, String.class);
             logger.info("进入rocketmq回查commit状态方法，transactionId = {}", transactionId);
             QueryWrapper<RocketTransactionLog> queryWrapper = new QueryWrapper<RocketTransactionLog>().eq("transaction_id", transactionId);
             RocketTransactionLog rocketTransactionLog = rocketTransactionLogDao.selectOne(queryWrapper);
-            return rocketTransactionLog != null && rocketTransactionLog.getStatus() == 1 ? RocketMQLocalTransactionState.COMMIT : RocketMQLocalTransactionState.ROLLBACK;
+            if(rocketTransactionLog == null){
+                rocketMQLocalTransactionState = RocketMQLocalTransactionState.UNKNOWN;
+            }else{
+                rocketMQLocalTransactionState = rocketTransactionLog.getStatus() == 1 ? RocketMQLocalTransactionState.COMMIT : RocketMQLocalTransactionState.ROLLBACK;
+            }
         } catch (Exception e) {
             logger.error("用户积分入库事务失败，回滚！",e);
-            return RocketMQLocalTransactionState.ROLLBACK;
+            rocketMQLocalTransactionState = RocketMQLocalTransactionState.ROLLBACK;
         }
+        logger.info("回查commit状态方法，返回 : {}", rocketMQLocalTransactionState);
+        return rocketMQLocalTransactionState;
     }
 
 }
