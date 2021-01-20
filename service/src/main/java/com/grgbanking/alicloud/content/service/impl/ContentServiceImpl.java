@@ -150,5 +150,6 @@ public class ContentServiceImpl implements ContentService {
         rocketTransactionLog.setStatus(insertContent);
         rocketTransactionLog.setLog(insertContent>0 ? "success" : "failure");
         rocketTransactionLogDao.insert(rocketTransactionLog);
+        logger.info("添加内容成功，用户：{}，事务id：{}，内容：{}", contentEntity.getUserid(), transactionId, contentEntity.getContent());
     }
 }

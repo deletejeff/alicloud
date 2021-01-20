@@ -1,11 +1,17 @@
 package com.grgbanking.alicloud.user.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.grgbanking.alicloud.comm.service.JwtOperator;
 import com.grgbanking.alicloud.common.entity.user.UserEntity;
 import com.grgbanking.alicloud.common.entity.user.UserPointsEventLogEntity;
 import com.grgbanking.alicloud.common.mq.UserAddPointsMqMsg;
+import com.grgbanking.alicloud.common.utils.ResultMap;
+import com.grgbanking.alicloud.common.utils.ResultMapUtil;
 import com.grgbanking.alicloud.dao.user.UserDao;
 import com.grgbanking.alicloud.dao.user.UserPointsEventLogDao;
+import com.grgbanking.alicloud.user.auth.CheckLogin;
 import com.grgbanking.alicloud.user.service.UserService;
+import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +20,7 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.messaging.Message;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 /**
@@ -31,9 +38,32 @@ public class UserController {
     private UserDao userDao;
     @Autowired
     private UserPointsEventLogDao userPointsEventLogDao;
+    @Autowired
+    private JwtOperator jwtOperator;
 
+    @GetMapping("/generateToken")
+    public String generateToken(){
+        Map<String, Object> userInfo = new HashMap<>(2);
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUserid("test");
+        userEntity.setUsername("测试用户");
+        userEntity.setPoints(0);
+        userInfo.put("userInfo", userEntity);
+        return jwtOperator.generateToken(userInfo);
+    }
+
+    @CheckLogin
+    @GetMapping("/getUserByToken")
+    public ResultMap getUserByKey(@RequestHeader("X-Token") String token){
+        logger.info("请求：getUserByToken");
+        Claims claims = jwtOperator.getClaims(token);
+        UserEntity userEntity = JSON.parseObject(JSON.toJSONString(claims.get("userInfo")), UserEntity.class);
+        return ResultMapUtil.success(userEntity);
+    }
+
+    @CheckLogin
     @GetMapping("/getUserByKey/{userid}")
-    public UserEntity getUserByKey(@PathVariable String userid){
+    public UserEntity getUserByKey(@PathVariable String userid,@RequestHeader("X-Token") String token, HttpServletRequest request){
         logger.info("请求：getUserByKey");
         return userService.getUserByKey(userid);
     }
@@ -52,6 +82,7 @@ public class UserController {
         return null;
     }
 
+    @CheckLogin
     @GetMapping("/addUserPoints")
     public Map<String,Object> addUserPoints(){
         Map<String, Object> map = new HashMap<>(2);

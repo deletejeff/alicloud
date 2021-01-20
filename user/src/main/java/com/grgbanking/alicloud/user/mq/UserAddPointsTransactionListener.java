@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * 处理mq中的消息
+ * 通过rocketMQTemplate 带事务的方法 ContentController.addContentByMqTransaction 调用的
  * @author machao
  */
 @Service

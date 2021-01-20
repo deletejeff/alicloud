@@ -88,8 +88,13 @@ spring:
             producer:
               transactional: true
               group: tx-add-points-group
+          my-stream-add-points:
+            destination: my-stream-add-points
+            producer:
+              transactional: true
+              group: my-stream-add-points-group
       bindings:
-        output:
+        output: #output使用的是spring cloud stream自带默认的output通道
           # 用来指定topic
           destination: add-points-stream-trans
 #使用配置文件的方式配置负载类
@@ -119,6 +124,8 @@ feign:
       default:
         #日志级别 NONE(默认)、BASIC、HEADERS、FULL
         loggerLevel: basic
+        requestInterceptors:
+          - com.grgbanking.alicloud.content.interceptor.TokenRelayRequestFeignInterceptor
   httpclient:
     #配置feign使用httpclient做请求，而不是用默认的urlConnection
     enabled: true

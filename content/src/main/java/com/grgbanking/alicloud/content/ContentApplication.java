@@ -1,5 +1,6 @@
 package com.grgbanking.alicloud.content;
 
+import com.grgbanking.alicloud.content.stream.producer.ContentMessageChannelProducer;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,11 +14,12 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * @author machao
+ * Source.class对应的是spring cloud stream默认的output通道（对应接收的管道为input，类为：Sink.class）
  */
 @MapperScan("com.grgbanking.alicloud.dao")
 @ComponentScan("com.grgbanking.alicloud")
 @EnableFeignClients(basePackages = "com.grgbanking.alicloud")
-@EnableBinding({Source.class})
+@EnableBinding({Source.class, ContentMessageChannelProducer.class})
 @SpringBootApplication
 public class ContentApplication {
 

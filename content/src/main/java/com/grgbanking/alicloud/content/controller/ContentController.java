@@ -6,6 +6,8 @@ import com.grgbanking.alicloud.common.entity.user.UserEntity;
 import com.grgbanking.alicloud.common.mq.UserAddPointsMqMsg;
 import com.grgbanking.alicloud.common.po.content.ContentPo;
 import com.grgbanking.alicloud.content.service.ContentService;
+import com.grgbanking.alicloud.content.stream.producer.ContentMessageChannelProducer;
+import com.grgbanking.alicloud.user.auth.CheckLogin;
 import org.apache.rocketmq.spring.support.RocketMQHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,8 @@ public class ContentController {
     private DiscoveryClient discoveryClient;
     @Autowired
     private Source source;
+    @Autowired
+    private ContentMessageChannelProducer contentMessageChannelProducer;
 
     public static final Logger logger = LoggerFactory.getLogger(ContentController.class);
 
@@ -77,6 +81,7 @@ public class ContentController {
      * @param contentPo
      * @return
      */
+    @CheckLogin
     @PostMapping("/addContent")
     public Map<String,Object> addContent(@RequestBody ContentPo contentPo){
         Map<String, Object> map = new HashMap<>(2);
@@ -156,9 +161,11 @@ public class ContentController {
 
     /**
      * 添加内容数据,通过rocketMq添加积分,使用cloud stream
+     * 带事务控制（已在application.yml中添加事务配置）spring.cloud.stream.rocketmq.bindings.output.producer.transactional=true
      * @param contentPo
      * @return
      */
+    @CheckLogin
     @PostMapping("/addContentByCloudStream")
     public Map<String,Object> addContentByCloudStream(@RequestBody ContentPo contentPo){
         Map<String, Object> map = new HashMap<>(2);
@@ -174,6 +181,51 @@ public class ContentController {
             userAddPointsMqMsg.setDescription("通过mqCloudStream消息，评论获取积分");
             userAddPointsMqMsg.setEvent("ADD");
             source.output().send(MessageBuilder
+                    .withPayload(userAddPointsMqMsg)
+                    .setHeader(RocketMQHeaders.TRANSACTION_ID, transactionId)
+                    .setHeader("contentId", contentEntity.getContentId())
+                    .setHeader("dto", JSON.toJSONString(userAddPointsMqMsg))
+                    .setHeader("contentEntity", JSON.toJSONString(contentEntity))
+                    .setHeader("filterHeader","just do it")
+                    .build());
+            boolean res = true;
+            if(res){
+                map.put("errorCode", 0);
+                map.put("errorMsg", "success");
+            }else{
+                map.put("errorCode", -1);
+                map.put("errorMsg", "failure");
+            }
+        } catch (Exception e) {
+            map.put("errorCode", -1);
+            map.put("errorMsg", "failure");
+            logger.error("content data insert failure!", e);
+        }
+        return map;
+    }
+
+    /**
+     * 添加内容数据,通过rocketMq添加积分,使用cloud stream
+     * 带事务控制（已在application.yml中添加事务配置）spring.cloud.stream.rocketmq.bindings.output.producer.transactional=true
+     * @param contentPo
+     * @return
+     */
+    @CheckLogin
+    @PostMapping("/addContentByMyCloudStream")
+    public Map<String,Object> addContentByMyCloudStream(@RequestBody ContentPo contentPo){
+        Map<String, Object> map = new HashMap<>(2);
+        try {
+            ContentEntity contentEntity = new ContentEntity();
+            contentEntity.setContentId(UUID.randomUUID().toString().replace("-", ""));
+            BeanUtils.copyProperties(contentPo, contentEntity);
+            String transactionId = UUID.randomUUID().toString();
+            logger.info("生成的 transactionId = {}", transactionId);
+            UserAddPointsMqMsg userAddPointsMqMsg = new UserAddPointsMqMsg();
+            userAddPointsMqMsg.setUserid(contentEntity.getUserid());
+            userAddPointsMqMsg.setPoints(50);
+            userAddPointsMqMsg.setDescription("通过mqCloudStream消息，评论获取积分");
+            userAddPointsMqMsg.setEvent("ADD");
+            contentMessageChannelProducer.addPointsOutPut().send(MessageBuilder
                     .withPayload(userAddPointsMqMsg)
                     .setHeader(RocketMQHeaders.TRANSACTION_ID, transactionId)
                     .setHeader("contentId", contentEntity.getContentId())

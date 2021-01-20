@@ -82,9 +82,12 @@ spring:
         binder:
           name-server: localhost:9876
       bindings:
-        input:
+        input:  #input使用的是spring cloud stream自带默认的input通道
           destination: add-points-stream-trans
           group: add-points-stream-trans-group
+        my-stream-add-points:
+          destination: my-stream-add-points
+          group: my-stream-add-points-group
 #        input:
 #          destination: add-points-stream
 #          group: add-points-stream-group
