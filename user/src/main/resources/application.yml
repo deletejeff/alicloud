@@ -70,7 +70,11 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: 172.26.32.227:8848,172.26.32.227:8849,172.26.32.227:8850
+#        server-addr: 192.168.0.103:8848,192.168.0.103:8849,192.168.0.103:8850
+        metadata:
+          management:
+            context-path: ${server.servlet.context-path}/actuator
     sentinel:
       # 关闭对Spring MVC端点的保护
 #      filter:
@@ -91,6 +95,12 @@ spring:
 #        input:
 #          destination: add-points-stream
 #          group: add-points-stream-group
+  zipkin:
+    base-url: http://127.0.0.1:9411
+  sleuth:
+    sampler:
+      # 抽样率 默认0.1
+      probability: 1.0
 feign:
   client:
     config:
@@ -117,3 +127,6 @@ rocketmq:
   name-server: localhost:9876
   producer:
     group: user-group
+jwt:
+  secret: xnrfofneomroxldfltmntsltnqtp_machao
+  expire-time-in-second: 600

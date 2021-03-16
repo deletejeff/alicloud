@@ -70,8 +70,12 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: 172.26.32.227:8848,172.26.32.227:8849,172.26.32.227:8850
+#        server-addr: 192.168.0.103:8848,192.168.0.103:8849,192.168.0.103:8850
         cluster-name: gaoxin
+        metadata:
+          management:
+            context-path: ${server.servlet.context-path}/actuator
     # 指定sentinel流量监控控制台地址
     sentinel:
       # 关闭对Spring MVC端点的保护
@@ -97,6 +101,11 @@ spring:
         output: #output使用的是spring cloud stream自带默认的output通道
           # 用来指定topic
           destination: add-points-stream-trans
+  zipkin:
+    base-url: http://127.0.0.1:9411
+  sleuth:
+    sampler:
+      probability: 1.0
 #使用配置文件的方式配置负载类
 #设置调用user项目的负载方式为RandomRule随机
 user:
@@ -143,3 +152,6 @@ rocketmq:
 # mybatisplus 配置
 mybatis-plus:
   mapper-locations: classpath*:/mybatis/oracle/daoMapper/*DaoMapper.xml
+jwt:
+  secret: xnrfofneomroxldfltmntsltnqtp_machao
+  expire-time-in-second: 60

@@ -1,0 +1,11 @@
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: 172.26.32.227:8848,172.26.32.227:8849,172.26.32.227:8850
+#        server-addr: 192.168.0.103:8848,192.168.0.103:8849,192.168.0.103:8850
+        file-extension: yaml
+  application:
+    name: content
+  profiles:
+    active: dev

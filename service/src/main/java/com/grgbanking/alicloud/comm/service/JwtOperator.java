@@ -22,13 +22,13 @@ public class JwtOperator {
     /**
      * 密钥
      */
-    @Value("${secret:xnrfofneomroxldfltmntsltnqtp_machao}")
+    @Value("${jwt.secret}")
     private String secret;
 
     /**
      * token的有效期
      */
-    @Value("${expireTimeInSeconds:600}")
+    @Value("${jwt.expire-time-in-second}")
     private Long expireTimeInSeconds;
 
 
