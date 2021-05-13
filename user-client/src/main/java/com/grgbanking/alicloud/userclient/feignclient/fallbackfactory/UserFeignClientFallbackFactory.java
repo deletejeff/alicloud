@@ -2,9 +2,10 @@ package com.grgbanking.alicloud.userclient.feignclient.fallbackfactory;
 
 import com.grgbanking.alicloud.common.entity.user.UserEntity;
 import com.grgbanking.alicloud.userclient.feignclient.UserFeignClient;
-import feign.hystrix.FallbackFactory;
+//import feign.hystrix.FallbackFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
